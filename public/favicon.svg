@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Main 3D Globe Sphere Gradient -->
+    <radialGradient id="globeGrad" cx="50%" cy="22%" r="78%" fx="50%" fy="18%">
+      <stop offset="0%" stop-color="#38f2ff" />
+      <stop offset="22%" stop-color="#0095ff" />
+      <stop offset="58%" stop-color="#0038a8" />
+      <stop offset="85%" stop-color="#001a66" />
+      <stop offset="100%" stop-color="#000d3d" />
+    </radialGradient>
+
+    <!-- Outer Rim Glow -->
+    <linearGradient id="rimGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#5ceeff" />
+      <stop offset="45%" stop-color="#0077ff" />
+      <stop offset="100%" stop-color="#002277" />
+    </linearGradient>
+
+    <!-- Globe Grid Lines Gradient -->
+    <linearGradient id="gridGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#66f7ff" stop-opacity="0.95" />
+      <stop offset="45%" stop-color="#00aeff" stop-opacity="0.85" />
+      <stop offset="100%" stop-color="#0051cc" stop-opacity="0.7" />
+    </linearGradient>
+
+    <!-- Spider Glossy White / Ice-Blue Body Gradient -->
+    <linearGradient id="spiderBodyGrad" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="55%" stop-color="#eef7ff" />
+      <stop offset="85%" stop-color="#a8d8ff" />
+      <stop offset="100%" stop-color="#4da6ff" />
+    </linearGradient>
+
+    <!-- Spider Leg Highlight Gradient -->
+    <linearGradient id="legGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="60%" stop-color="#e3f2ff" />
+      <stop offset="100%" stop-color="#6bb8ff" />
+    </linearGradient>
+
+    <!-- Spider Leg Bevel Shadow -->
+    <linearGradient id="legShadow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#99ceff" />
+      <stop offset="100%" stop-color="#2b7de9" />
+    </linearGradient>
+
+    <!-- Eye Gradient -->
+    <linearGradient id="eyeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00113a" />
+      <stop offset="60%" stop-color="#003380" />
+      <stop offset="100%" stop-color="#0066cc" />
+    </linearGradient>
+
+    <!-- Drop Shadow for Spider -->
+    <filter id="spiderShadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#000929" flood-opacity="0.65" />
+    </filter>
+
+    <clipPath id="globeClip">
+      <circle cx="256" cy="256" r="236" />
+    </clipPath>
+  </defs>
+
+  <!-- Globe Base & Outer Rim -->
+  <circle cx="256" cy="256" r="242" fill="url(#rimGrad)" />
+  <circle cx="256" cy="256" r="236" fill="url(#globeGrad)" />
+
+  <!-- Globe Grid (Clipped inside sphere) -->
+  <g clip-path="url(#globeClip)" fill="none" stroke="url(#gridGrad)" stroke-linecap="round">
+    <!-- Central Vertical Meridian -->
+    <line x1="256" y1="16" x2="256" y2="496" stroke-width="14" />
+
+    <!-- Inner Meridians -->
+    <path d="M256,18 C145,95 145,417 256,494" stroke-width="13" />
+    <path d="M256,18 C367,95 367,417 256,494" stroke-width="13" />
+
+    <!-- Outer Meridians -->
+    <path d="M256,18 C55,120 55,392 256,494" stroke-width="12" />
+    <path d="M256,18 C457,120 457,392 256,494" stroke-width="12" />
+
+    <!-- Latitude Parallels -->
+    <path d="M42,155 Q256,205 470,155" stroke-width="13" />
+    <path d="M18,265 Q256,315 494,265" stroke-width="13" />
+    <path d="M52,375 Q256,425 460,375" stroke-width="12" />
+    <path d="M125,455 Q256,480 387,455" stroke-width="10" />
+
+    <!-- Top Glossy Highlight -->
+    <ellipse cx="256" cy="85" rx="145" ry="58" fill="#ffffff" fill-opacity="0.14" stroke="none" />
+  </g>
+
+  <!-- 3D Glossy White Spider -->
+  <g filter="url(#spiderShadow)">
+    <!-- LEFT LEGS -->
+    <!-- Leg L1 (Top Pincer Leg) -->
+    <path d="M222,226 L108,184 L196,38 L156,90 L82,196 L216,244 Z" fill="url(#legShadow)" />
+    <path d="M224,222 L92,174 L194,36 L142,162 L222,238 Z" fill="url(#legGrad)" />
+
+    <!-- Leg L2 (Upper-Mid Leg) -->
+    <path d="M218,244 L106,204 L22,286 L26,332 L114,234 L216,260 Z" fill="url(#legShadow)" />
+    <path d="M220,240 L102,196 L20,282 L112,222 L218,254 Z" fill="url(#legGrad)" />
+
+    <!-- Leg L3 (Lower-Mid Leg) -->
+    <path d="M220,264 L132,238 L78,308 L112,448 L96,314 L144,262 L222,278 Z" fill="url(#legShadow)" />
+    <path d="M222,260 L128,230 L72,304 L112,448 L140,254 L222,274 Z" fill="url(#legGrad)" />
+
+    <!-- Leg L4 (Bottom Inner Leg) -->
+    <path d="M226,282 L166,274 L132,340 L226,478 L156,342 L180,294 L228,296 Z" fill="url(#legShadow)" />
+    <path d="M228,278 L162,266 L124,336 L226,478 L174,286 L228,292 Z" fill="url(#legGrad)" />
+
+    <!-- RIGHT LEGS (Mirrored) -->
+    <!-- Leg R1 (Top Pincer Leg) -->
+    <path d="M290,226 L404,184 L316,38 L356,90 L430,196 L296,244 Z" fill="url(#legShadow)" />
+    <path d="M288,222 L420,174 L318,36 L370,162 L290,238 Z" fill="url(#legGrad)" />
+
+    <!-- Leg R2 (Upper-Mid Leg) -->
+    <path d="M294,244 L406,204 L490,286 L486,332 L398,234 L296,260 Z" fill="url(#legShadow)" />
+    <path d="M292,240 L410,196 L492,282 L400,222 L294,254 Z" fill="url(#legGrad)" />
+
+    <!-- Leg R3 (Lower-Mid Leg) -->
+    <path d="M292,264 L380,238 L434,308 L400,448 L416,314 L368,262 L290,278 Z" fill="url(#legShadow)" />
+    <path d="M290,260 L384,230 L440,304 L400,448 L372,254 L290,274 Z" fill="url(#legGrad)" />
+
+    <!-- Leg R4 (Bottom Inner Leg) -->
+    <path d="M286,282 L346,274 L380,340 L286,478 L356,342 L332,294 L284,296 Z" fill="url(#legShadow)" />
+    <path d="M284,278 L350,266 L388,336 L286,478 L338,286 L284,292 Z" fill="url(#legGrad)" />
+
+    <!-- Spider Cephalothorax (Head) -->
+    <ellipse cx="256" cy="212" rx="46" ry="42" fill="url(#spiderBodyGrad)" stroke="#cce8ff" stroke-width="2" />
+
+    <!-- Spider Angled Almond Eyes -->
+    <path d="M220,196 C226,188 242,198 248,214 C236,220 220,210 220,196 Z" fill="url(#eyeGrad)" />
+    <path d="M292,196 C286,188 270,198 264,214 C276,220 292,210 292,196 Z" fill="url(#eyeGrad)" />
+
+    <!-- Spider Abdomen (Lower Teardrop Body) -->
+    <path d="M256,240 C288,240 306,282 298,334 C292,374 272,408 256,422 C240,408 220,374 214,334 C206,282 224,240 256,240 Z" fill="url(#spiderBodyGrad)" stroke="#d9eeff" stroke-width="2" />
+
+    <!-- Subtle Gloss Highlight on Abdomen -->
+    <ellipse cx="250" cy="296" rx="24" ry="44" fill="#ffffff" fill-opacity="0.55" />
+  </g>
+</svg>

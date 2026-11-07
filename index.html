@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!--SEO_HEAD_START-->
+    <title>مدونة تقنية وتعليمية شاملة | العنكبوت للمعلومات</title>
+    <meta name="description" content="موقع العنكبوت للمعلومات information-net هو مدونة تعليمية شاملة تغطي الألعاب، البرامج، الكتب، التكنولوجيا، الذكاء الاصطناعي، الشروحات، وببجي موبايل." />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://www.information-net.com/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="ar_AR" />
+    <meta property="og:site_name" content="العنكبوت للمعلومات" />
+    <meta property="og:title" content="مدونة تقنية وتعليمية شاملة | العنكبوت للمعلومات" />
+    <meta property="og:description" content="موقع العنكبوت للمعلومات information-net هو مدونة تعليمية شاملة تغطي الألعاب، البرامج، الكتب، التكنولوجيا، الذكاء الاصطناعي، الشروحات، وببجي موبايل." />
+    <meta property="og:url" content="https://www.information-net.com/" />
+    <meta property="og:image" content="https://www.information-net.com/logo-spider.png" />
+    <meta property="og:image:secure_url" content="https://www.information-net.com/logo-spider.png" />
+    <meta property="og:image:alt" content="العنكبوت للمعلومات" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@information_net" />
+    <meta name="twitter:title" content="مدونة تقنية وتعليمية شاملة | العنكبوت للمعلومات" />
+    <meta name="twitter:description" content="موقع العنكبوت للمعلومات information-net هو مدونة تعليمية شاملة تغطي الألعاب، البرامج، الكتب، التكنولوجيا، الذكاء الاصطناعي، الشروحات، وببجي موبايل." />
+    <meta name="twitter:image" content="https://www.information-net.com/logo-spider.png" />
+    <meta name="twitter:image:alt" content="العنكبوت للمعلومات" />
+    <!--SEO_HEAD_END-->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#035dcd" />
+    <meta name="msapplication-navbutton-color" content="#035dcd" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="العنكبوت" />
+
+    <!-- Preconnect & DNS-Prefetch for External Domains (Core Web Vitals / LCP) -->
+    <link rel="preconnect" href="https://images.unsplash.com" crossorigin />
+    <link rel="dns-prefetch" href="https://images.unsplash.com" />
+    <link rel="preconnect" href="https://blogger.googleusercontent.com" crossorigin />
+    <link rel="dns-prefetch" href="https://blogger.googleusercontent.com" />
+    <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossorigin />
+    <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
+
+    <!-- Favicon (.ico, PNG, SVG & Apple Touch Icon) -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+
+    <!-- وسوم التحقق من ملكية الموقع في استوديو جوجل (Google Search Console) -->
+    <meta name="google-site-verification" content="WaTxoK3twHH7y1c-4pcS4vudaLcXOkrv5QMqBd1g--Q" />
+
+    <script>
+      (function () {
+        var OrigWebSocket = window.WebSocket;
+        if (OrigWebSocket) {
+          var ProxyWebSocket = function (url, protocols) {
+            var isViteWs =
+              protocols === 'vite-hmr' ||
+              protocols === 'vite-ping' ||
+              (Array.isArray(protocols) &&
+                (protocols.indexOf('vite-hmr') !== -1 ||
+                  protocols.indexOf('vite-ping') !== -1));
+            if (isViteWs) {
+              var fakeSocket = {
+                url: String(url || ''),
+                protocol: typeof protocols === 'string' ? protocols : 'vite-hmr',
+                readyState: 1,
+                bufferedAmount: 0,
+                extensions: '',
+                binaryType: 'blob',
+                CONNECTING: 0,
+                OPEN: 1,
+                CLOSING: 2,
+                CLOSED: 3,
+                onopen: null,
+                onerror: null,
+                onclose: null,
+                onmessage: null,
+                send: function () {},
+                close: function () {
+                  fakeSocket.readyState = 3;
+                },
+                addEventListener: function (type, listener) {
+                  if (type === 'open' && typeof listener === 'function') {
+                    setTimeout(function () {
+                      try {
+                        listener(new Event('open'));
+                      } catch (e) {}
+                    }, 0);
+                  }
+                },
+                removeEventListener: function () {},
+                dispatchEvent: function () {
+                  return true;
+                }
+              };
+              return fakeSocket;
+            }
+            return arguments.length > 1
+              ? new OrigWebSocket(url, protocols)
+              : new OrigWebSocket(url);
+          };
+          ProxyWebSocket.prototype = OrigWebSocket.prototype;
+          ProxyWebSocket.CONNECTING = OrigWebSocket.CONNECTING;
+          ProxyWebSocket.OPEN = OrigWebSocket.OPEN;
+          ProxyWebSocket.CLOSING = OrigWebSocket.CLOSING;
+          ProxyWebSocket.CLOSED = OrigWebSocket.CLOSED;
+          window.WebSocket = ProxyWebSocket;
+        }
+      })();
+    </script>
+
+    <!-- كود إعلانات جوجل أدسنس التلقائية (Google AdSense Auto Ads) -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4007921870267373" crossorigin="anonymous"></script>
+  </head>
+  <body class="bg-[#f7f7f7] text-[#34495e] font-['Tajawal',sans-serif] antialiased selection:bg-[#035dcd] selection:text-white">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

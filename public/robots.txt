@@ -1,0 +1,46 @@
+# robots.txt for information-net (العنكبوت للمعلومات)
+# Official Domain: https://www.information-net.com/
+
+User-agent: *
+Allow: /
+Disallow: /search?
+Disallow: /api/
+
+# Googlebot & Search Crawlers
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Mobile
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+# Google AdSense Crawler (Critical for Ad serving & site review)
+User-agent: Mediapartners-Google
+Allow: /
+
+User-agent: AdsBot-Google
+Allow: /
+
+User-agent: AdsBot-Google-Mobile
+Allow: /
+
+# Bing, Yahoo, DuckDuckGo & Social Bots
+User-agent: Bingbot
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+# Sitemap Locations
+Sitemap: https://www.information-net.com/sitemap.xml
+Sitemap: https://www.information-net.com/sitemap_index.xml
+Sitemap: https://www.information-net.com/sitemap-downloads.xml
+Sitemap: https://www.information-net.com/sitemap-blog.xml
+Sitemap: https://www.information-net.com/sitemap-services.xml
+Sitemap: https://www.information-net.com/sitemap-pages.xml
+

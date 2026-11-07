@@ -1,0 +1,8 @@
+{
+  "name": "Remix العنكبوت للمعلومات | information-net",
+  "description": "مدونة تعليمية تقنية شاملة تغطي الألعاب، البرامج، ببجي موبايل، الذكاء الاصطناعي، الشروحات والحلول التقنية.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
