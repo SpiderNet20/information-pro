@@ -31,12 +31,9 @@ import { Sidebar } from './Sidebar';
 import { AdSenseUnit } from './AdSenseUnit';
 import { ReadingProgressBar } from './ReadingProgressBar';
 import { useFavorites } from '../hooks/useFavorites';
+import { TocHeading, processArticleContentAndToc } from '../utils/toc';
 
-export interface TocHeading {
-  id: string;
-  text: string;
-  level: 'h2' | 'h3';
-}
+export type { TocHeading };
 
 interface PostPageViewProps {
   post: Post;
@@ -68,7 +65,6 @@ function optimizeExternalImageUrl(url: string, targetWidth = 1200, quality = 80)
     try {
       const parsed = new URL(url);
       parsed.searchParams.set('auto', 'format');
-      parsed.searchParams.set('fit', 'crop');
       parsed.searchParams.set('q', String(quality));
       parsed.searchParams.set('w', String(targetWidth));
       return parsed.toString();
@@ -121,6 +117,7 @@ export const PostPageView: React.FC<PostPageViewProps> = ({
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setComments(post.comments || []);
     setArticlePage(1);
+    setIsTocOpen(false);
 
     if (typeof document === 'undefined') return;
 
@@ -299,110 +296,16 @@ export const PostPageView: React.FC<PostPageViewProps> = ({
     return html;
   }, [post.rawContent]);
 
-  // Automatically extract ONLY h2 and h3 headings, inject navigation anchor IDs,
+  // Automatically extract ONLY h2 and h3 headings, inject semantic English anchor IDs,
   // enforce Lazy Loading & async decoding on all embedded images, and clean legacy raw ad tags
   const { processedHtml, tocHeadings } = useMemo(() => {
-    if (!sanitizedRawContent) {
-      const headings: TocHeading[] = [];
-      if (post.content?.sections) {
-        post.content.sections.forEach((sec, idx) => {
-          headings.push({
-            id: sec.id || `section-${idx}`,
-            text: sec.title,
-            level: 'h2',
-          });
-        });
-      }
-      return { processedHtml: '', tocHeadings: headings };
-    }
-
-    if (typeof window !== 'undefined' && typeof DOMParser !== 'undefined') {
-      try {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(sanitizedRawContent, 'text/html');
-
-        // Remove legacy hardcoded AdSense scripts/ins inside rawContent so managed AdSenseUnit handles distribution cleanly
-        doc.querySelectorAll('ins.adsbygoogle, script').forEach((el) => el.remove());
-
-        // Enforce Lazy Loading, async decoding, and CLS-safe dimensions on all in-article images
-        doc.querySelectorAll('img').forEach((img) => {
-          img.setAttribute('loading', 'lazy');
-          img.setAttribute('decoding', 'async');
-          if (!img.getAttribute('width')) img.setAttribute('width', '800');
-          if (!img.getAttribute('height')) img.setAttribute('height', '450');
-          const rawSrc = img.getAttribute('src');
-          if (rawSrc && rawSrc.includes('images.unsplash.com')) {
-            img.setAttribute('src', optimizeExternalImageUrl(rawSrc, 900, 80));
-          }
-        });
-
-        // Extract ONLY h2 and h3 elements
-        const headingElements = doc.querySelectorAll('h2, h3');
-        const headings: TocHeading[] = [];
-
-        headingElements.forEach((el, index) => {
-          const text = el.textContent?.trim() || '';
-          if (!text) return;
-
-          const level = el.tagName.toLowerCase() as 'h2' | 'h3';
-          const id = `toc-${level}-${index}`;
-
-          el.setAttribute('id', id);
-          el.classList.add('scroll-mt-24', 'transition-all', 'duration-300');
-
-          headings.push({
-            id,
-            text,
-            level,
-          });
-        });
-
-        return {
-          processedHtml: doc.body.innerHTML,
-          tocHeadings: headings,
-        };
-      } catch (err) {
-        console.warn('Failed to parse headings with DOMParser:', err);
-      }
-    }
-
-    // High-performance regex fallback
-    const headings: TocHeading[] = [];
-    let index = 0;
-    const processedHtml = sanitizedRawContent
-      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
-      .replace(/<ins\b[^>]*class=["'][^"']*adsbygoogle[^"']*["'][^>]*>[\s\S]*?<\/ins>/gi, '')
-      .replace(/<img\b([^>]*)>/gi, (match, attrs) => {
-        let updated = attrs;
-        if (!/\bloading\s*=/i.test(updated)) updated += ' loading="lazy"';
-        if (!/\bdecoding\s*=/i.test(updated)) updated += ' decoding="async"';
-        if (!/\bwidth\s*=/i.test(updated)) updated += ' width="800"';
-        if (!/\bheight\s*=/i.test(updated)) updated += ' height="450"';
-        return `<img${updated}>`;
-      })
-      .replace(
-        /<(h2|h3)([^>]*)>(.*?)<\/\1>/gi,
-        (match, tag, attrs, inner) => {
-          const level = tag.toLowerCase() as 'h2' | 'h3';
-          const cleanText = inner.replace(/<[^>]*>/g, '').trim();
-          if (!cleanText) return match;
-
-          const id = `toc-${level}-${index++}`;
-          headings.push({ id, text: cleanText, level });
-
-          let cleanAttrs = attrs;
-          if (/id=["'][^"']*["']/i.test(cleanAttrs)) {
-            cleanAttrs = cleanAttrs.replace(/id=["'][^"']*["']/i, `id="${id}"`);
-          } else {
-            cleanAttrs = ` id="${id}" ${cleanAttrs}`;
-          }
-
-          return `<${tag}${cleanAttrs} class="scroll-mt-24 transition-all duration-300">${inner}</${tag}>`;
-        }
-      );
-
-    return { processedHtml, tocHeadings: headings };
-  }, [sanitizedRawContent, post.content]);
+    return processArticleContentAndToc(
+      sanitizedRawContent,
+      post.content?.sections,
+      post.slug || String(post.id),
+      optimizeExternalImageUrl
+    );
+  }, [sanitizedRawContent, post.content, post.slug, post.id]);
 
   // Smart multi-slot article content splitter for balanced in-article ad distribution
   const splitRawContent = useMemo(() => {
@@ -451,11 +354,18 @@ export const PostPageView: React.FC<PostPageViewProps> = ({
     };
   }, [processedHtml, sanitizedRawContent]);
 
-  // Smooth scroll and highlight heading on TOC click
+  // Smooth scroll and highlight heading on TOC click, updating #anchor-id in URL without page reload
   const handleScrollToHeading = (e: React.MouseEvent, id: string) => {
     e.preventDefault();
     const el = document.getElementById(id);
     if (el) {
+      if (typeof window !== 'undefined') {
+        window.history.replaceState(
+          null,
+          '',
+          `${window.location.pathname}${window.location.search}#${id}`
+        );
+      }
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       el.classList.add('heading-active-target');
       setTimeout(() => {
@@ -463,6 +373,26 @@ export const PostPageView: React.FC<PostPageViewProps> = ({
       }, 2000);
     }
   };
+
+  // Support scrolling to #anchor-id when an article URL is opened directly with a hash
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.location.hash) return;
+    const rawAnchor = decodeURIComponent(window.location.hash.replace(/^#/, '')).trim();
+    if (!rawAnchor || rawAnchor.includes('/')) return;
+
+    const timer = setTimeout(() => {
+      const targetEl = document.getElementById(rawAnchor);
+      if (targetEl) {
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        targetEl.classList.add('heading-active-target');
+        setTimeout(() => {
+          targetEl.classList.remove('heading-active-target');
+        }, 2000);
+      }
+    }, 150);
+
+    return () => clearTimeout(timer);
+  }, [post.id, processedHtml]);
 
   return (
     <div className="w-full text-right animate-in fade-in duration-300">
@@ -477,48 +407,42 @@ export const PostPageView: React.FC<PostPageViewProps> = ({
           
           <article className="bg-white dark:bg-[#252a54] rounded-2xl shadow-sm border border-gray-100 dark:border-[#2f366b] overflow-visible p-4 sm:p-8">
             
-            {/* Top Badge */}
-            <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-gray-100 dark:border-[#2f366b] mb-4">
-              <div className="flex flex-wrap items-center gap-2">
+            {/* Top Breadcrumb Hierarchy & Action Controls (الرئيسية / القسم / عنوان المقال) */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-gray-100 dark:border-[#2f366b] mb-5">
+              <nav
+                aria-label="التسلسل الهرمي للمقال"
+                className="flex flex-wrap items-center gap-1.5 text-xs font-bold text-gray-600 dark:text-gray-300 min-w-0 flex-1"
+              >
+                <a
+                  href="/"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onSelectCategory('all');
+                  }}
+                  className="text-[#035dcd] dark:text-blue-400 hover:underline flex items-center gap-1 shrink-0 cursor-pointer"
+                >
+                  <Home className="w-3.5 h-3.5" />
+                  <span>الرئيسية</span>
+                </a>
+                <span className="text-gray-300 dark:text-gray-600 shrink-0">/</span>
                 <a
                   href={`/${post.categorySlug}/`}
                   onClick={(e) => {
                     e.preventDefault();
                     onSelectCategory(post.categorySlug);
                   }}
-                  className={`px-3 py-1 rounded text-xs font-bold text-white cat-badge-${post.categoryIndex} hover:opacity-90 transition-opacity cursor-pointer`}
+                  className="text-[#035dcd] dark:text-blue-400 hover:underline shrink-0 cursor-pointer"
                 >
                   {post.category}
                 </a>
-                {post.categorySlug === 'AI' &&
-                  post.tags
-                    .filter((tag) => tag !== 'الذكاء الاصطناعي' && tag !== 'AI')
-                    .map((subTag) => {
-                      const aiSubTagPaths: Record<string, string> = {
-                        'أدوات': '/AI/Tools/',
-                        'تحميلات': '/AI/Downloads/',
-                        'الربح': '/AI/Earning/',
-                        'مقارنات': '/AI/Tools-Comparison/',
-                      };
-                      const subHref = aiSubTagPaths[subTag] || '/AI/';
-                      return (
-                        <a
-                          key={subTag}
-                          href={subHref}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            onSelectCategory(subTag);
-                          }}
-                          className="px-3 py-1 rounded text-xs font-bold bg-blue-50 dark:bg-[#1e2348] text-[#035dcd] dark:text-blue-300 border border-blue-200/70 dark:border-[#384180] hover:bg-[#035dcd] hover:text-white transition-colors cursor-pointer"
-                        >
-                          {subTag}
-                        </a>
-                      );
-                    })}
-              </div>
+                <span className="text-gray-300 dark:text-gray-600 shrink-0">/</span>
+                <span className="text-gray-800 dark:text-gray-100 font-bold truncate max-w-[220px] sm:max-w-md">
+                  {post.title}
+                </span>
+              </nav>
 
               {/* Action Controls: Save to Favorites & Reading Settings */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={(e) => toggleFavorite(post.id, e)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
@@ -601,8 +525,13 @@ export const PostPageView: React.FC<PostPageViewProps> = ({
               </div>
             )}
 
-            {/* Featured Image - LCP optimized with explicit dimensions to prevent CLS */}
-            <div className="mb-8 relative group overflow-hidden rounded-2xl border border-gray-100 dark:border-[#2f366b] shadow-md bg-gray-100 dark:bg-[#1e2348]">
+            {/* Title ABOVE Featured Image (عنوان المقال فوق الصورة) */}
+            <h1 className="text-xl sm:text-3xl font-black text-gray-900 dark:text-white leading-snug mb-5">
+              {post.title}
+            </h1>
+
+            {/* Featured Image - Full uncropped display */}
+            <div className="mb-8 relative group overflow-hidden rounded-2xl border border-gray-100 dark:border-[#2f366b] shadow-md bg-slate-100 dark:bg-[#1e2348] flex items-center justify-center">
               <img
                 src={optimizeExternalImageUrl(post.thumbnail, 1200, 82)}
                 alt={post.title}
@@ -611,73 +540,12 @@ export const PostPageView: React.FC<PostPageViewProps> = ({
                 loading="eager"
                 fetchPriority="high"
                 decoding="async"
-                className="w-full h-auto max-h-[520px] object-cover cursor-pointer transition-transform duration-700 group-hover:scale-105"
+                className="w-full h-auto object-contain cursor-pointer block"
                 onClick={() => onOpenImage(post.thumbnail, post.title)}
               />
             </div>
 
-            {/* Title (SeoPlus h1.topic-title) */}
-            <h1 className="text-xl sm:text-3xl font-black text-gray-900 dark:text-white leading-snug mb-5">
-              {post.title}
-            </h1>
-
-            {/* Table of Contents (محتوى المقال - فهرس العناوين: h2 و h3 فقط) */}
-            {tocHeadings.length > 0 && (
-              <div className="my-6 rounded-2xl border border-gray-200 dark:border-[#384180] bg-gray-50/90 dark:bg-[#1f244a] overflow-hidden shadow-xs">
-                <button
-                  onClick={() => setIsTocOpen(!isTocOpen)}
-                  className="w-full flex items-center justify-between px-5 py-3.5 font-bold text-sm text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-[#2a3160] transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#035dcd] shadow-[0_0_8px_rgba(3,93,205,0.6)]" />
-                    <span className="font-extrabold text-sm sm:text-base">محتوى المقال (فهرس العناوين)</span>
-                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-[#035dcd] dark:text-blue-300">
-                      {tocHeadings.length} {tocHeadings.length === 1 ? 'عنوان' : 'عناوين'}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-xs text-[#035dcd] dark:text-blue-400 font-semibold">
-                    <span>{isTocOpen ? 'إخفاء الفهرس' : 'عرض الفهرس'}</span>
-                    {isTocOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                  </div>
-                </button>
-
-                {isTocOpen && (
-                  <div className="p-5 pt-3 border-t border-gray-200 dark:border-[#2f366b]">
-                    <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
-                      {tocHeadings.map((heading, idx) => (
-                        <li
-                          key={heading.id}
-                          className={`transition-all duration-150 ${
-                            heading.level === 'h3'
-                              ? 'pr-6 sm:pr-8 text-xs sm:text-sm text-gray-600 dark:text-gray-400'
-                              : 'font-bold text-gray-900 dark:text-white'
-                          }`}
-                        >
-                          <a
-                            href={`#${heading.id}`}
-                            onClick={(e) => handleScrollToHeading(e, heading.id)}
-                            className="group flex items-start gap-2 hover:text-[#035dcd] dark:hover:text-blue-400 transition-colors cursor-pointer py-0.5"
-                          >
-                            {heading.level === 'h2' ? (
-                              <span className="shrink-0 w-5 h-5 rounded-md bg-blue-100 dark:bg-blue-900/60 text-[#035dcd] dark:text-blue-300 text-[11px] font-black flex items-center justify-center mt-0.5 group-hover:bg-[#035dcd] group-hover:text-white transition-colors">
-                                {idx + 1}
-                              </span>
-                            ) : (
-                              <span className="shrink-0 w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-500 mt-2 group-hover:bg-[#035dcd] dark:group-hover:bg-blue-400 transition-colors" />
-                            )}
-                            <span className="leading-relaxed group-hover:underline decoration-[#035dcd]/40 underline-offset-4">
-                              {heading.text}
-                            </span>
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* 1. إعلان بداية المقال (بعد الفهرس مباشرة وقبل النص الأساسي لتحسين تجربة القراءة وCLS) */}
+            {/* 1. إعلان بداية المقال (قبل النص الأساسي لتحسين تجربة القراءة وCLS) */}
             {renderArticleAd('top')}
 
             {/* Article Content Area */}
@@ -688,6 +556,7 @@ export const PostPageView: React.FC<PostPageViewProps> = ({
             >
               {post.rawContent && splitRawContent ? (
                 <>
+                  {/* المقدمة (Introduction) */}
                   <div
                     className="article-raw-html overflow-x-auto"
                     onClick={(e) => {
@@ -700,7 +569,60 @@ export const PostPageView: React.FC<PostPageViewProps> = ({
                     dangerouslySetInnerHTML={{ __html: splitRawContent.part1 }}
                   />
 
-                  {/* 2. إعلان وسط المقال الأول (بعد المقدمة والفقرة الثانية) */}
+                  {/* Table of Contents (محتوى المقال - بعد المقدمة، مغلق افتراضياً، عناوين H2 فقط) */}
+                  {tocHeadings.length > 0 && (
+                    <div className="my-6 rounded-2xl border border-gray-200 dark:border-[#384180] bg-gray-50/90 dark:bg-[#1f244a] overflow-hidden shadow-xs text-base">
+                      <button
+                        type="button"
+                        aria-expanded={isTocOpen}
+                        aria-controls="article-toc-list"
+                        onClick={() => setIsTocOpen(!isTocOpen)}
+                        className="w-full flex items-center justify-between px-5 py-3.5 font-bold text-sm text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-[#2a3160] transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#035dcd] shadow-[0_0_8px_rgba(3,93,205,0.6)]" />
+                          <span className="font-extrabold text-sm sm:text-base">محتوى المقال (فهرس العناوين)</span>
+                          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-[#035dcd] dark:text-blue-300">
+                            {tocHeadings.length} {tocHeadings.length === 1 ? 'عنوان' : 'عناوين'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-[#035dcd] dark:text-blue-400 font-semibold">
+                          <span>{isTocOpen ? 'إخفاء الفهرس' : 'عرض الفهرس'}</span>
+                          {isTocOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </div>
+                      </button>
+
+                      {isTocOpen && (
+                        <nav
+                          id="article-toc-list"
+                          aria-label="جدول محتويات المقال"
+                          dir="rtl"
+                          className="p-5 pt-3 border-t border-gray-200 dark:border-[#2f366b]"
+                        >
+                          <ol className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                            {tocHeadings.map((heading, idx) => (
+                              <li key={heading.id} className="font-bold text-gray-900 dark:text-white">
+                                <a
+                                  href={`#${heading.id}`}
+                                  onClick={(e) => handleScrollToHeading(e, heading.id)}
+                                  className="group flex items-start gap-2 hover:text-[#035dcd] dark:hover:text-blue-400 transition-colors cursor-pointer py-0.5"
+                                >
+                                  <span className="shrink-0 w-5 h-5 rounded-md bg-blue-100 dark:bg-blue-900/60 text-[#035dcd] dark:text-blue-300 text-[11px] font-black flex items-center justify-center mt-0.5 group-hover:bg-[#035dcd] group-hover:text-white transition-colors">
+                                    {idx + 1}
+                                  </span>
+                                  <span className="leading-relaxed group-hover:underline decoration-[#035dcd]/40 underline-offset-4">
+                                    {heading.text}
+                                  </span>
+                                </a>
+                              </li>
+                            ))}
+                          </ol>
+                        </nav>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 2. إعلان وسط المقال الأول (بعد المقدمة والفهرس) */}
                   {renderArticleAd('middle')}
 
                   {splitRawContent.part2 && (
@@ -743,10 +665,68 @@ export const PostPageView: React.FC<PostPageViewProps> = ({
                     </p>
                   )}
 
-                  {currentSections.map((sec, secIdx) => (
-                    <React.Fragment key={sec.id}>
-                      <section id={sec.id} className="scroll-mt-20 pt-4">
-                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  {/* Table of Contents after Intro in structured articles */}
+                  {tocHeadings.length > 0 && (
+                    <div className="my-6 rounded-2xl border border-gray-200 dark:border-[#384180] bg-gray-50/90 dark:bg-[#1f244a] overflow-hidden shadow-xs text-base">
+                      <button
+                        type="button"
+                        aria-expanded={isTocOpen}
+                        aria-controls="article-toc-list"
+                        onClick={() => setIsTocOpen(!isTocOpen)}
+                        className="w-full flex items-center justify-between px-5 py-3.5 font-bold text-sm text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-[#2a3160] transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#035dcd] shadow-[0_0_8px_rgba(3,93,205,0.6)]" />
+                          <span className="font-extrabold text-sm sm:text-base">محتوى المقال (فهرس العناوين)</span>
+                          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-[#035dcd] dark:text-blue-300">
+                            {tocHeadings.length} {tocHeadings.length === 1 ? 'عنوان' : 'عناوين'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-[#035dcd] dark:text-blue-400 font-semibold">
+                          <span>{isTocOpen ? 'إخفاء الفهرس' : 'عرض الفهرس'}</span>
+                          {isTocOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </div>
+                      </button>
+
+                      {isTocOpen && (
+                        <nav
+                          id="article-toc-list"
+                          aria-label="جدول محتويات المقال"
+                          dir="rtl"
+                          className="p-5 pt-3 border-t border-gray-200 dark:border-[#2f366b]"
+                        >
+                          <ol className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                            {tocHeadings.map((heading, idx) => (
+                              <li key={heading.id} className="font-bold text-gray-900 dark:text-white">
+                                <a
+                                  href={`#${heading.id}`}
+                                  onClick={(e) => handleScrollToHeading(e, heading.id)}
+                                  className="group flex items-start gap-2 hover:text-[#035dcd] dark:hover:text-blue-400 transition-colors cursor-pointer py-0.5"
+                                >
+                                  <span className="shrink-0 w-5 h-5 rounded-md bg-blue-100 dark:bg-blue-900/60 text-[#035dcd] dark:text-blue-300 text-[11px] font-black flex items-center justify-center mt-0.5 group-hover:bg-[#035dcd] group-hover:text-white transition-colors">
+                                    {idx + 1}
+                                  </span>
+                                  <span className="leading-relaxed group-hover:underline decoration-[#035dcd]/40 underline-offset-4">
+                                    {heading.text}
+                                  </span>
+                                </a>
+                              </li>
+                            ))}
+                          </ol>
+                        </nav>
+                      )}
+                    </div>
+                  )}
+
+                  {currentSections.map((sec, secIdx) => {
+                    const resolvedSectionId = tocHeadings[secIdx]?.id || sec.id || `section-${secIdx + 1}`;
+                    return (
+                    <React.Fragment key={resolvedSectionId}>
+                      <section className="pt-4">
+                        <h2
+                          id={resolvedSectionId}
+                          className="scroll-mt-24 text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2 transition-all duration-300"
+                        >
                           <span className="w-1.5 h-6 bg-[#035dcd] rounded-full inline-block" />
                           <span>{sec.title}</span>
                         </h2>
@@ -834,7 +814,8 @@ export const PostPageView: React.FC<PostPageViewProps> = ({
                         secIdx === Math.floor(currentSections.length / 2) &&
                         renderArticleAd('in-article-2')}
                     </React.Fragment>
-                  ))}
+                    );
+                  })}
                 </>
               )}
             </div>
@@ -971,7 +952,7 @@ export const PostPageView: React.FC<PostPageViewProps> = ({
                         onClick={() => onSelectPost(rPost)}
                         className="group cursor-pointer rounded-xl overflow-hidden bg-gray-50 dark:bg-[#1f244a] border border-gray-100 dark:border-[#2f366b] hover:shadow-lg transition-all"
                       >
-                        <div className="relative h-32 overflow-hidden bg-gray-200 dark:bg-[#1e2348]">
+                        <div className="relative aspect-video overflow-hidden bg-slate-100 dark:bg-[#1e2348] flex items-center justify-center">
                           <img
                             src={optimizeExternalImageUrl(rPost.thumbnail, 480, 75)}
                             alt={rPost.title}
@@ -979,7 +960,7 @@ export const PostPageView: React.FC<PostPageViewProps> = ({
                             height={270}
                             loading="lazy"
                             decoding="async"
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            className="w-full h-full object-contain"
                           />
                           <button
                             onClick={(e) => toggleFavorite(rPost.id, e)}

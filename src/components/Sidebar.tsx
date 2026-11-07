@@ -11,6 +11,8 @@ import {
   Clock,
   ArrowLeft,
   ChevronLeft,
+  ChevronDown,
+  ChevronUp,
   FileCode,
   Bookmark,
   Trash2,
@@ -18,6 +20,9 @@ import {
 import { Post, CategoryInfo } from '../types';
 import { AdSenseUnit } from './AdSenseUnit';
 import { useFavorites } from '../hooks/useFavorites';
+import { TocHeading, buildTocHierarchy } from '../utils/toc';
+
+export type SidebarTocHeading = TocHeading;
 
 interface SidebarProps {
   categories: CategoryInfo[];
@@ -28,6 +33,8 @@ interface SidebarProps {
   onOpenRedirectTool: () => void;
   onOpenSeoViewer?: () => void;
   onSearchQuery: (query: string) => void;
+  tocHeadings?: SidebarTocHeading[];
+  onScrollToHeading?: (e: React.MouseEvent, id: string) => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -39,9 +46,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenRedirectTool,
   onOpenSeoViewer,
   onSearchQuery,
+  tocHeadings,
+  onScrollToHeading,
 }) => {
   const [searchInput, setSearchInput] = useState('');
+  const [isTocOpen, setIsTocOpen] = useState(true);
   const { favoriteIds, isFavorite, toggleFavorite, removeFavorite, clearFavorites } = useFavorites();
+
+  const tocTree = React.useMemo(
+    () => (tocHeadings && tocHeadings.length > 0 ? buildTocHierarchy(tocHeadings) : []),
+    [tocHeadings]
+  );
 
   const favoritePosts = favoriteIds
     .map((id) => posts.find((p) => p.id === id))
@@ -85,7 +100,80 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </form>
       </div>
 
-      {/* 2. Dedicated Favorites Section (المفضلات المحفوظة) */}
+      {/* 2. Semantic SEO Table of Contents (محتوى المقال - فهرس العناوين) */}
+      {tocHeadings && tocHeadings.length > 0 && (
+        <div className="rounded-2xl border border-gray-100 dark:border-[#2f366b] bg-white dark:bg-[#252a54] overflow-hidden shadow-sm">
+          <button
+            type="button"
+            aria-expanded={isTocOpen}
+            aria-controls="sidebar-article-toc-list"
+            onClick={() => setIsTocOpen(!isTocOpen)}
+            className="w-full flex items-center justify-between px-5 py-4 font-bold text-sm text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-[#2a3160] transition-colors cursor-pointer"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#035dcd] shadow-[0_0_8px_rgba(3,93,205,0.6)] shrink-0" />
+              <span className="font-extrabold text-sm truncate">محتوى المقال (فهرس العناوين)</span>
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-[#1e2348] text-[#035dcd] dark:text-blue-300 shrink-0">
+                {tocHeadings.length}
+              </span>
+            </div>
+            <div className="flex items-center gap-1 text-xs text-[#035dcd] dark:text-blue-400 font-semibold shrink-0">
+              <span>{isTocOpen ? 'إخفاء الفهرس' : 'عرض الفهرس'}</span>
+              {isTocOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </div>
+          </button>
+
+          {isTocOpen && (
+            <nav
+              id="sidebar-article-toc-list"
+              aria-label="جدول محتويات المقال"
+              dir="rtl"
+              className="p-4 pt-3 border-t border-gray-100 dark:border-[#2f366b] bg-gray-50/70 dark:bg-[#1f244a]"
+            >
+              <ol className="space-y-2.5 text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                {tocTree.map((node, h2Idx) => (
+                  <li key={node.id} className="font-bold text-gray-900 dark:text-white">
+                    <a
+                      href={`#${node.id}`}
+                      onClick={(e) => onScrollToHeading?.(e, node.id)}
+                      className="group flex items-start gap-2 hover:text-[#035dcd] dark:hover:text-blue-400 transition-colors cursor-pointer py-0.5"
+                    >
+                      <span className="shrink-0 w-5 h-5 rounded-md bg-blue-100 dark:bg-blue-900/60 text-[#035dcd] dark:text-blue-300 text-[11px] font-black flex items-center justify-center mt-0.5 group-hover:bg-[#035dcd] group-hover:text-white transition-colors">
+                        {h2Idx + 1}
+                      </span>
+                      <span className="leading-relaxed group-hover:underline decoration-[#035dcd]/40 underline-offset-4">
+                        {node.text}
+                      </span>
+                    </a>
+
+                    {/* Nested H3 sub-headings under their parent H2 */}
+                    {node.children.length > 0 && (
+                      <ul className="mt-1.5 mr-2.5 pr-3 border-r-2 border-blue-200/80 dark:border-[#384180] space-y-1.5 font-medium text-xs text-gray-600 dark:text-gray-400">
+                        {node.children.map((sub) => (
+                          <li key={sub.id}>
+                            <a
+                              href={`#${sub.id}`}
+                              onClick={(e) => onScrollToHeading?.(e, sub.id)}
+                              className="group flex items-start gap-2 hover:text-[#035dcd] dark:hover:text-blue-400 transition-colors cursor-pointer py-0.5"
+                            >
+                              <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 mt-2 group-hover:bg-[#035dcd] dark:group-hover:bg-blue-400 transition-colors" />
+                              <span className="leading-relaxed group-hover:underline decoration-[#035dcd]/40 underline-offset-4">
+                                {sub.text}
+                              </span>
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            </nav>
+          )}
+        </div>
+      )}
+
+      {/* 3. Dedicated Favorites Section (المفضلات المحفوظة) */}
       <div className="p-5 rounded-2xl bg-white dark:bg-[#252a54] shadow-sm border border-gray-100 dark:border-[#2f366b]">
         <div className="headline-seo pb-2.5 mb-4 flex items-center justify-between">
           <h3 className="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-1.5">

@@ -640,9 +640,15 @@ export default function App() {
       setStandalonePage(standalone);
       setIsNotFound(notFound);
 
-      // Clean legacy hash or non-standard slashes on valid known routes only
-      if (!notFound && (window.location.hash || window.location.pathname !== cleanPath)) {
-        window.history.replaceState(null, '', cleanPath);
+      // Clean legacy route hash or non-standard slashes on valid known routes only,
+      // while preserving in-page semantic TOC anchor hashes (e.g. #what-is-ai) on article pages
+      const isArticleTocHash =
+        Boolean(post) &&
+        Boolean(window.location.hash) &&
+        /^#[a-z0-9]+(?:-[a-z0-9]+)*$/.test(window.location.hash);
+      const targetUrl = isArticleTocHash ? `${cleanPath}${window.location.hash}` : cleanPath;
+      if (!notFound && `${window.location.pathname}${window.location.hash}` !== targetUrl) {
+        window.history.replaceState(null, '', targetUrl);
       }
     };
 
@@ -977,11 +983,11 @@ export default function App() {
                       onClick={() => handleSelectPost(post)}
                       className="group bg-white dark:bg-[#181e36] rounded-2xl border border-slate-200/80 dark:border-slate-800 p-3 shadow-xs hover:shadow-md hover:border-[#0284c7] transition-all cursor-pointer flex flex-col"
                     >
-                      <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 mb-3">
+                      <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-900 mb-3 flex items-center justify-center">
                         <img
                           src={post.thumbnail}
                           alt={post.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          className="w-full h-full object-contain"
                         />
                       </div>
 
@@ -1063,12 +1069,12 @@ export default function App() {
                             </div>
                           </div>
 
-                          {/* Left side: Pure Unshaded Thumbnail */}
-                          <div className="w-28 h-20 sm:w-44 sm:h-28 rounded-xl sm:rounded-2xl overflow-hidden shrink-0 bg-slate-100 dark:bg-slate-800 shadow-2xs">
+                          {/* Left side: Pure Uncropped Thumbnail */}
+                          <div className="w-28 sm:w-44 aspect-video rounded-xl sm:rounded-2xl overflow-hidden shrink-0 bg-slate-100 dark:bg-slate-900 shadow-2xs flex items-center justify-center">
                             <img
                               src={post.thumbnail}
                               alt={post.title}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              className="w-full h-full object-contain"
                             />
                           </div>
                         </article>
@@ -1464,12 +1470,12 @@ export default function App() {
                           >
                             <div
                               onClick={() => handleSelectPost(post)}
-                              className="relative sm:w-72 sm:min-w-[280px] h-48 sm:h-auto overflow-hidden shrink-0 bg-gray-200 cursor-pointer"
+                              className="relative sm:w-72 sm:min-w-[280px] aspect-video sm:aspect-auto overflow-hidden shrink-0 bg-slate-100 dark:bg-slate-900 cursor-pointer flex items-center justify-center"
                             >
                               <img
                                 src={post.thumbnail}
                                 alt={post.title}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                className="w-full h-full object-contain"
                               />
                               <div className="absolute top-3 right-3 flex flex-wrap items-center gap-1.5">
                                 <span className={`text-xs font-bold text-white px-2.5 py-1 rounded shadow-md cat-badge-${post.categoryIndex}`}>
@@ -1570,12 +1576,12 @@ export default function App() {
                           >
                             <div
                               onClick={() => handleSelectPost(post)}
-                              className="relative h-48 overflow-hidden bg-gray-200 cursor-pointer"
+                              className="relative aspect-video overflow-hidden bg-slate-100 dark:bg-slate-900 cursor-pointer flex items-center justify-center"
                             >
                               <img
                                 src={post.thumbnail}
                                 alt={post.title}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                className="w-full h-full object-contain"
                               />
                               <div className="absolute top-3 right-3 flex flex-wrap items-center gap-1.5">
                                 <span className={`text-xs font-bold text-white px-2.5 py-1 rounded shadow-md cat-badge-${post.categoryIndex}`}>
@@ -1663,12 +1669,12 @@ export default function App() {
                           >
                             <div
                               onClick={() => handleSelectPost(post)}
-                              className="relative w-28 h-20 rounded-lg overflow-hidden shrink-0 bg-gray-200 cursor-pointer"
+                              className="relative w-28 aspect-video rounded-lg overflow-hidden shrink-0 bg-slate-100 dark:bg-slate-900 cursor-pointer flex items-center justify-center"
                             >
                               <img
                                 src={post.thumbnail}
                                 alt={post.title}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                className="w-full h-full object-contain"
                               />
                             </div>
 

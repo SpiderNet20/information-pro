@@ -92,19 +92,19 @@ export const FeaturedSlider: React.FC<FeaturedSliderProps> = ({
       </div>
 
       {/* 2. Featured Card (Right 2/3) + Most Viewed Dark Box (Left 1/3) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-stretch">
-        {/* Right Column (2/3 in RTL): Main Featured Article Card — Clean un-tinted image */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-start">
+        {/* Right Column (2/3 in RTL): Main Featured Article Card — Full uncropped image */}
         {mainPost && (
           <div
             onClick={() => onSelectPost(mainPost)}
             className="lg:col-span-2 group bg-white dark:bg-[#181e36] rounded-2xl sm:rounded-3xl overflow-hidden cursor-pointer shadow-md border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between"
           >
-            {/* Pure, unshaded Featured Image */}
-            <div className="relative aspect-video sm:h-[270px] w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
+            {/* Full Uncropped Featured Image */}
+            <div className="relative w-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center overflow-hidden">
               <img
                 src={mainPost.thumbnail}
                 alt={mainPost.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                className="w-full h-auto max-h-[420px] object-contain block"
               />
 
               {/* Bookmark Button */}
@@ -125,9 +125,9 @@ export const FeaturedSlider: React.FC<FeaturedSliderProps> = ({
               </span>
             </div>
 
-            {/* Clean Text Area below Image (zero shading over image) */}
+            {/* Clean Text Area below Image */}
             <div className="p-4 sm:p-6 text-right flex-1 flex flex-col justify-between">
-              <h2 className="text-base sm:text-2xl font-extrabold leading-snug text-[#0f172a] dark:text-white group-hover:text-[#0284c7] transition-colors font-heading line-clamp-2">
+              <h2 className="text-base sm:text-2xl font-extrabold leading-snug text-[#0f172a] dark:text-white group-hover:text-[#0284c7] transition-colors font-heading">
                 {mainPost.title}
               </h2>
 
@@ -153,7 +153,7 @@ export const FeaturedSlider: React.FC<FeaturedSliderProps> = ({
               </h3>
             </div>
 
-            {/* 4 Numbered Items with pure, unshaded thumbnails */}
+            {/* 4 Numbered Items with uncropped thumbnails */}
             <div className="divide-y divide-slate-800/80">
               {mostViewedPosts.map((post, idx) => (
                 <div
@@ -161,13 +161,13 @@ export const FeaturedSlider: React.FC<FeaturedSliderProps> = ({
                   onClick={() => onSelectPost(post)}
                   className="py-3 first:pt-1 last:pb-1 flex items-center justify-between gap-3 cursor-pointer group"
                 >
-                  {/* Right side: Pure Thumbnail + Title & Meta */}
+                  {/* Right side: Uncropped Thumbnail + Title & Meta */}
                   <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl overflow-hidden shrink-0 bg-slate-800 shadow-xs">
+                    <div className="w-20 sm:w-22 aspect-video rounded-xl overflow-hidden shrink-0 bg-slate-900 flex items-center justify-center shadow-xs">
                       <img
                         src={post.thumbnail}
                         alt={post.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-contain"
                       />
                     </div>
 

@@ -27,6 +27,7 @@ import {
 import { Post, Comment } from '../types';
 import { AdSenseUnit } from './AdSenseUnit';
 import { ReadingProgressBar } from './ReadingProgressBar';
+import { processArticleContentAndToc } from '../utils/toc';
 
 interface ArticleModalProps {
   post: Post | null;
@@ -46,7 +47,7 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
   const [fontSize, setFontSize] = useState(16);
   const [lineHeight, setLineHeight] = useState(2);
   const [showSettings, setShowSettings] = useState(false);
-  const [isTocOpen, setIsTocOpen] = useState(true);
+  const [isTocOpen, setIsTocOpen] = useState(false);
   const [activeCommentTab, setActiveCommentTab] = useState<'blogger' | 'facebook' | 'disqus'>('blogger');
   const [copiedLink, setCopiedLink] = useState(false);
   const [articlePage, setArticlePage] = useState(1); // For SeoPlus ↚ PageBreak
@@ -98,81 +99,14 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
       ? post.content.sections.slice(0, Math.ceil(post.content.sections.length / 2))
       : post.content.sections.slice(Math.ceil(post.content.sections.length / 2));
 
-  // Automatically extract ONLY h2 and h3 headings and inject navigation anchor IDs
-  const { processedHtml, tocHeadings } = useMemo(() => {
-    if (!post?.rawContent) {
-      const headings: { id: string; text: string; level: 'h2' | 'h3' }[] = [];
-      if (post?.content?.sections) {
-        post.content.sections.forEach((sec, idx) => {
-          headings.push({
-            id: sec.id || `section-modal-${idx}`,
-            text: sec.title,
-            level: 'h2',
-          });
-        });
-      }
-      return { processedHtml: '', tocHeadings: headings };
-    }
-
-    if (typeof window !== 'undefined' && typeof DOMParser !== 'undefined') {
-      try {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(post.rawContent, 'text/html');
-        // Extract ONLY h2 and h3 headings
-        const headingElements = doc.querySelectorAll('h2, h3');
-        const headings: { id: string; text: string; level: 'h2' | 'h3' }[] = [];
-
-        headingElements.forEach((el, index) => {
-          const text = el.textContent?.trim() || '';
-          if (!text) return;
-
-          const level = el.tagName.toLowerCase() as 'h2' | 'h3';
-          const id = `modal-toc-${level}-${index}`;
-
-          el.setAttribute('id', id);
-          el.classList.add('scroll-mt-24', 'transition-all', 'duration-300');
-
-          headings.push({
-            id,
-            text,
-            level,
-          });
-        });
-
-        return {
-          processedHtml: doc.body.innerHTML,
-          tocHeadings: headings,
-        };
-      } catch (err) {
-        console.warn('Failed to parse headings in ArticleModal:', err);
-      }
-    }
-
-    const headings: { id: string; text: string; level: 'h2' | 'h3' }[] = [];
-    let index = 0;
-    const processedHtml = post.rawContent.replace(
-      /<(h2|h3)([^>]*)>(.*?)<\/\1>/gi,
-      (match, tag, attrs, inner) => {
-        const level = tag.toLowerCase() as 'h2' | 'h3';
-        const cleanText = inner.replace(/<[^>]*>/g, '').trim();
-        if (!cleanText) return match;
-
-        const id = `modal-toc-${level}-${index++}`;
-        headings.push({ id, text: cleanText, level });
-
-        let cleanAttrs = attrs;
-        if (/id=["'][^"']*["']/i.test(cleanAttrs)) {
-          cleanAttrs = cleanAttrs.replace(/id=["'][^"']*["']/i, `id="${id}"`);
-        } else {
-          cleanAttrs = ` id="${id}" ${cleanAttrs}`;
-        }
-
-        return `<${tag}${cleanAttrs} class="scroll-mt-24 transition-all duration-300">${inner}</${tag}>`;
-      }
+  // Automatically extract ONLY h2 and h3 headings and inject semantic English anchor IDs
+  const { processedHtml, tocHeadings, tocTree } = useMemo(() => {
+    return processArticleContentAndToc(
+      post?.rawContent || '',
+      post?.content?.sections,
+      post?.slug || String(post?.id || 'modal')
     );
-
-    return { processedHtml, tocHeadings: headings };
-  }, [post?.rawContent, post?.content]);
+  }, [post?.rawContent, post?.content, post?.slug, post?.id]);
 
   // Split processed HTML content after the second paragraph for in-article ad placement
   const splitRawContent = useMemo(() => {
@@ -403,37 +337,49 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
                 </button>
 
                 {isTocOpen && (
-                  <div className="p-5 pt-3 border-t border-gray-200 dark:border-[#2f366b]">
-                    <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
-                      {tocHeadings.map((heading, idx) => (
-                        <li
-                          key={heading.id}
-                          className={`transition-all duration-150 ${
-                            heading.level === 'h3'
-                              ? 'pr-6 sm:pr-8 text-xs sm:text-sm text-gray-600 dark:text-gray-400'
-                              : 'font-bold text-gray-900 dark:text-white'
-                          }`}
-                        >
+                  <nav
+                    aria-label="جدول محتويات المقال"
+                    dir="rtl"
+                    className="p-5 pt-3 border-t border-gray-200 dark:border-[#2f366b]"
+                  >
+                    <ol className="space-y-2.5 text-sm text-gray-700 dark:text-gray-300">
+                      {tocTree.map((node, h2Idx) => (
+                        <li key={node.id} className="font-bold text-gray-900 dark:text-white">
                           <a
-                            href={`#${heading.id}`}
-                            onClick={(e) => handleScrollToHeading(e, heading.id)}
+                            href={`#${node.id}`}
+                            onClick={(e) => handleScrollToHeading(e, node.id)}
                             className="group flex items-start gap-2 hover:text-[#035dcd] dark:hover:text-blue-400 transition-colors cursor-pointer py-0.5"
                           >
-                            {heading.level === 'h2' ? (
-                              <span className="shrink-0 w-5 h-5 rounded-md bg-blue-100 dark:bg-blue-900/60 text-[#035dcd] dark:text-blue-300 text-[11px] font-black flex items-center justify-center mt-0.5 group-hover:bg-[#035dcd] group-hover:text-white transition-colors">
-                                {idx + 1}
-                              </span>
-                            ) : (
-                              <span className="shrink-0 w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-500 mt-2 group-hover:bg-[#035dcd] dark:group-hover:bg-blue-400 transition-colors" />
-                            )}
+                            <span className="shrink-0 w-5 h-5 rounded-md bg-blue-100 dark:bg-blue-900/60 text-[#035dcd] dark:text-blue-300 text-[11px] font-black flex items-center justify-center mt-0.5 group-hover:bg-[#035dcd] group-hover:text-white transition-colors">
+                              {h2Idx + 1}
+                            </span>
                             <span className="leading-relaxed group-hover:underline decoration-[#035dcd]/40 underline-offset-4">
-                              {heading.text}
+                              {node.text}
                             </span>
                           </a>
+
+                          {node.children.length > 0 && (
+                            <ul className="mt-1.5 mr-3 pr-3 border-r-2 border-blue-200/80 dark:border-[#384180] space-y-1.5 font-medium text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                              {node.children.map((sub) => (
+                                <li key={sub.id}>
+                                  <a
+                                    href={`#${sub.id}`}
+                                    onClick={(e) => handleScrollToHeading(e, sub.id)}
+                                    className="group flex items-start gap-2 hover:text-[#035dcd] dark:hover:text-blue-400 transition-colors cursor-pointer py-0.5"
+                                  >
+                                    <span className="shrink-0 w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-500 mt-2 group-hover:bg-[#035dcd] dark:group-hover:bg-blue-400 transition-colors" />
+                                    <span className="leading-relaxed group-hover:underline decoration-[#035dcd]/40 underline-offset-4">
+                                      {sub.text}
+                                    </span>
+                                  </a>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
                         </li>
                       ))}
-                    </ul>
-                  </div>
+                    </ol>
+                  </nav>
                 )}
               </div>
             )}
@@ -468,10 +414,15 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
                     </p>
                   )}
 
-                  {currentSections.map((sec, secIdx) => (
-                    <React.Fragment key={sec.id}>
-                      <section id={sec.id} className="scroll-mt-20 pt-4">
-                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  {currentSections.map((sec, secIdx) => {
+                    const resolvedSectionId = tocHeadings[secIdx]?.id || sec.id || `section-${secIdx + 1}`;
+                    return (
+                    <React.Fragment key={resolvedSectionId}>
+                      <section className="pt-4">
+                        <h2
+                          id={resolvedSectionId}
+                          className="scroll-mt-24 text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2"
+                        >
                           <span className="w-1.5 h-6 bg-[#035dcd] rounded-full inline-block" />
                           <span>{sec.title}</span>
                         </h2>
@@ -559,7 +510,8 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
                         <AdSenseUnit key={`modal-ad-mid-${post.id}`} slotType="middle" postId={post.id} />
                       )}
                     </React.Fragment>
-                  ))}
+                    );
+                  })}
                 </>
               )}
             </div>

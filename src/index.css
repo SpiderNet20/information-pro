@@ -52,6 +52,12 @@ html {
   overflow-x: hidden;
 }
 
+/* Ensure all images fit their containers completely without cropping */
+img {
+  object-fit: contain !important;
+  max-width: 100%;
+}
+
 /* Focus ring accessibility */
 a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
   outline: 3px solid #035dcd !important;
@@ -283,6 +289,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 }
 
 /* Table of Contents scroll margin and target highlight */
+h2[id],
+h3[id],
+section[id],
 .article-raw-html h2,
 .article-raw-html h3,
 .article-text-body h2,
