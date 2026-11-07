@@ -3,12 +3,6 @@ import {
   Search,
   Moon,
   Sun,
-  Send,
-  Facebook,
-  Youtube,
-  Twitter,
-  Globe,
-  Sparkles,
   Download,
   CheckCircle2,
   Smartphone,
@@ -16,6 +10,7 @@ import {
   PlusSquare,
   ExternalLink,
   X,
+  Menu,
 } from 'lucide-react';
 import { StandalonePageType } from '../types';
 import { usePWAInstall } from '../hooks/usePWAInstall';
@@ -26,7 +21,6 @@ interface HeaderProps {
   onOpenMobileMenu: () => void;
   onOpenSearch: () => void;
   onOpenRedirectTool: () => void;
-
   onOpenStandalonePage: (page: StandalonePageType) => void;
   activeCategory: string;
   onSelectCategory: (cat: string) => void;
@@ -35,8 +29,8 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   darkMode,
   onToggleDarkMode,
+  onOpenMobileMenu,
   onOpenSearch,
-  onOpenStandalonePage,
   activeCategory,
   onSelectCategory,
 }) => {
@@ -46,292 +40,129 @@ export const Header: React.FC<HeaderProps> = ({
   const isIframe =
     typeof window !== 'undefined' && window.self !== window.top;
 
-  const handlePWAInstallClick = async () => {
-    if (isInstallable) {
-      const accepted = await install();
-      if (accepted) {
-        setShowPWAInstallModal(false);
-      }
-      return;
-    }
-    setShowPWAInstallModal(true);
-  };
-
-  const categories = [
-    { slug: 'all', name: 'الرئيسية' },
-    { slug: 'AI', name: 'الذكاء الاصطناعي' },
-    { slug: 'Business', name: 'المال والأعمال' },
-    { slug: 'Blog', name: 'المدونة' },
-    { slug: 'Downloads', name: 'التحميلات' },
-    { slug: 'tools', name: 'الأدوات' },
+  const navItems = [
+    { label: 'الرئيسية', slug: 'all', href: '/' },
+    { label: 'التقنية', slug: 'Blog', href: '/Blog/' },
+    { label: 'الذكاء الاصطناعي', slug: 'AI', href: '/AI/' },
+    { label: 'الألعاب', slug: 'Games', href: '/Blog/' },
+    { label: 'البرامج', slug: 'Downloads', href: '/Downloads/' },
+    { label: 'الربح من الإنترنت', slug: 'Business', href: '/Business/' },
+    { label: 'شروحات', slug: 'tools', href: '/tools/' },
   ];
 
+  const isNavItemActive = (slug: string, index: number) => {
+    if (index === 0) return activeCategory === 'all';
+    if (index === 3) return false; // Secondary alias for Blog
+    return activeCategory === slug;
+  };
+
   return (
-    <header className="lg:sticky top-0 z-40 w-full shadow-sm bg-white dark:bg-[#252a54]">
-      {/* Top Ribbon (HeaderTOP in SeoPlus) - Hidden on Mobile */}
-      <div className="hidden md:block bg-[#035dcd] text-white text-xs border-b border-blue-400/20">
-        <div className="max-w-7xl mx-auto px-4 h-9 flex items-center justify-between">
-          {/* Statutory and Tool Pages */}
-          <nav className="flex items-center gap-4">
-            <button
-              onClick={() => onSelectCategory('all')}
-              className="hover:text-blue-100 transition-colors cursor-pointer"
-            >
-              الصفحة الرئيسية
-            </button>
-            <span className="opacity-40">•</span>
-            <button
-              onClick={() => onOpenStandalonePage('contact')}
-              className="hover:text-blue-100 transition-colors cursor-pointer"
-            >
-              اتصل بنا
-            </button>
-            <span className="opacity-40">•</span>
-            <button
-              onClick={() => onOpenStandalonePage('about')}
-              className="hover:text-blue-100 transition-colors cursor-pointer"
-            >
-              من نحن
-            </button>
-            <span className="opacity-40">•</span>
-            <button
-              onClick={() => onOpenStandalonePage('privacy')}
-              className="hover:text-blue-100 transition-colors cursor-pointer"
-            >
-              سياسة الخصوصية
-            </button>
-            <span className="opacity-40">•</span>
-            <button
-              onClick={() => onOpenStandalonePage('terms')}
-              className="hover:text-blue-100 transition-colors cursor-pointer"
-            >
-              اتفاقية المستخدم
-            </button>
-            <span className="opacity-40">•</span>
-            <button
-              onClick={() => onOpenStandalonePage('sitemap')}
-              className="flex items-center gap-1 text-blue-100 hover:text-white font-bold transition-colors cursor-pointer"
-              title="خريطة الموقع XML"
-            >
-              <Globe className="w-3.5 h-3.5" />
-              <span>خريطة الموقع (Sitemap)</span>
-            </button>
-          </nav>
+    <header className="sticky top-0 z-40 w-full bg-[#0b1120] text-white border-b border-slate-800/80 shadow-md">
+      <div className="w-full max-w-6xl mx-auto px-2.5 sm:px-4 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4 overflow-hidden">
+        {/* Right Side (RTL Start): Brand Logo + Navigation Links */}
+        <div className="flex items-center gap-2 sm:gap-4 lg:gap-8 min-w-0">
+          {/* Mobile menu button */}
+          <button
+            onClick={onOpenMobileMenu}
+            className="lg:hidden w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#161f33] border border-slate-700/60 flex items-center justify-center text-slate-300 hover:text-white cursor-pointer shrink-0"
+            aria-label="القائمة"
+          >
+            <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
 
-          {/* Social Icons */}
-          <div className="flex items-center gap-3 mr-auto md:mr-0">
-            <a
-              href="https://t.me/arb_1xbet"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-1 hover:bg-white/20 rounded transition-colors"
-              title="تيليجرام"
-            >
-              <Send className="w-3.5 h-3.5 -rotate-90" />
-            </a>
-            <a
-              href="https://www.facebook.com/informationspider/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-1 hover:bg-white/20 rounded transition-colors"
-              title="فيسبوك"
-            >
-              <Facebook className="w-3.5 h-3.5" />
-            </a>
-            <a
-              href="https://www.youtube.com/channel/UCMNj0yd5HpbesN8wWh8167Q"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-1 hover:bg-white/20 rounded transition-colors"
-              title="يوتيوب"
-            >
-              <Youtube className="w-3.5 h-3.5" />
-            </a>
-            <a
-              href="https://twitter.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-1 hover:bg-white/20 rounded transition-colors"
-              title="تويتر"
-            >
-              <Twitter className="w-3.5 h-3.5" />
-            </a>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Navigation Bar (HeaderBOT in SeoPlus) */}
-      <div className="border-b border-gray-100 dark:border-[#2f366b] transition-colors">
-        <div className="max-w-7xl mx-auto px-4 h-14 lg:h-20 flex items-center justify-between gap-4">
-          
-          {/* Right Section: Brand Logo */}
-          <div className="flex items-center gap-3">
-            <a
-              href="/"
-              onClick={(e) => {
-                e.preventDefault();
-                onSelectCategory('all');
-              }}
-              className="flex items-center gap-2.5 cursor-pointer group select-none"
-            >
+          {/* Brand Logo */}
+          <a
+            href="/"
+            onClick={(e) => {
+              e.preventDefault();
+              onSelectCategory('all');
+            }}
+            className="flex items-center gap-2 sm:gap-2.5 cursor-pointer group select-none min-w-0"
+          >
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#111c35] border border-sky-500/30 flex items-center justify-center shadow-inner shrink-0">
               <img
                 src="/logo-spider.png"
                 alt="العنكبوت للمعلومات"
-                className="w-9 h-9 lg:w-11 lg:h-11 rounded-full object-contain drop-shadow-md group-hover:scale-105 transition-transform"
+                className="w-5 h-5 sm:w-6 sm:h-6 object-contain"
               />
-
-              <div className="flex flex-col">
-                <span className="font-black text-base lg:text-xl text-gray-900 dark:text-white tracking-tight leading-none group-hover:text-[#035dcd] dark:group-hover:text-blue-400 transition-colors">
-                  العنكبوت <span className="text-[#035dcd] dark:text-blue-400 font-extrabold">للمعلومات</span>
-                </span>
-                <span className="text-[9px] lg:text-[10px] text-gray-400 font-medium tracking-wider">
-                  information-net.com
-                </span>
-              </div>
-            </a>
-          </div>
-
-          {/* Center Section: Desktop Nav Links - Hidden on Mobile */}
-          <nav className="hidden lg:flex items-center gap-1 xl:gap-2 text-sm font-bold text-gray-700 dark:text-gray-200">
-            <a
-              href="/"
-              onClick={(e) => {
-                e.preventDefault();
-                onSelectCategory('all');
-              }}
-              className={`px-3 py-2 rounded-lg transition-colors cursor-pointer ${
-                activeCategory === 'all'
-                  ? 'text-[#035dcd] dark:text-blue-400 bg-blue-50/70 dark:bg-blue-900/30'
-                  : 'hover:text-[#035dcd] dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-[#1e2348]'
-              }`}
-            >
-              الرئيسية
-            </a>
-
-            {categories.filter(c => c.slug !== 'all').map((cat) => (
-              <a
-                key={cat.slug}
-                href={`/${cat.slug}/`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  onSelectCategory(cat.slug);
-                }}
-                className={`px-3 py-2 rounded-lg transition-colors cursor-pointer ${
-                  activeCategory === cat.slug || (activeCategory === 'all' && false)
-                    ? 'text-[#035dcd] dark:text-blue-400 bg-blue-50/70 dark:bg-blue-900/30'
-                    : 'hover:text-[#035dcd] dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-[#1e2348]'
-                }`}
-              >
-                {cat.name}
-              </a>
-            ))}
-          </nav>
-
-          {/* Left Section: Action Buttons - Some hidden on mobile */}
-          <div className="flex items-center gap-2">
-            {/* In-App PWA Install Button in Header Bar (hidden when already installed) */}
-            {!isInstalled && (
-              <button
-                onClick={handlePWAInstallClick}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#035dcd] hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
-                title="تثبيت تطبيق العنكبوت للمعلومات (PWA)"
-                aria-label="تثبيت التطبيق"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">تثبيت التطبيق</span>
-              </button>
-            )}
-
-            {/* Search Trigger - Hidden on mobile header */}
-            <button
-              onClick={onOpenSearch}
-              className="hidden lg:flex w-10 h-10 rounded-xl bg-gray-100 dark:bg-[#1e2348] hover:bg-gray-200 dark:hover:bg-[#2d3363] text-gray-700 dark:text-gray-200 items-center justify-center transition-colors cursor-pointer"
-              title="البحث في الموقع"
-              aria-label="بحث"
-            >
-              <Search className="w-4 h-4" />
-            </button>
-
-            {/* Dark Mode Toggle - Hidden on mobile header */}
-            <button
-              onClick={onToggleDarkMode}
-              className="hidden lg:flex w-10 h-10 rounded-xl bg-gray-100 dark:bg-[#1e2348] hover:bg-gray-200 dark:hover:bg-[#2d3363] text-gray-700 dark:text-gray-200 items-center justify-center transition-colors cursor-pointer"
-              title={darkMode ? 'الوضع النهاري' : 'الوضع الليلي'}
-              aria-label="تبديل الوضع"
-            >
-              {darkMode ? (
-                <Sun className="w-4 h-4 text-amber-400" />
-              ) : (
-                <Moon className="w-4 h-4 text-blue-600" />
-              )}
-            </button>
-          </div>
-
-        </div>
-      </div>
-
-      {/* Promotional Download Banner - Only visible on Homepage */}
-      {activeCategory === 'all' && (
-        <div className="relative bg-[#035dcd] bg-[url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhcG2lXiWcAYQcZA0-pBLgPL8hGSY7tkBu2r-VlfQFSJ4j3CIeUbyIhCkiwKdqCj43FU-d7YabW6mX9a_30KhMK2pUVeqArhf4861H3bgcKhSRoD0abhNoYIj71ibl73htOcJUhLFvCE3mUUs6y1efGsyCBawzOpP-UyKSq9YR8K-T33EgTLcpPFf8AIOk/s1600/2fe08e27-c206-4415-8ae9-48e52f82d936.png')] bg-cover bg-center bg-no-repeat text-white border-b border-blue-400/20 overflow-hidden">
-          <div className="max-w-7xl mx-auto px-4 py-12 flex flex-col md:flex-row items-center justify-between gap-10 relative z-10">
-            <div className="flex-1 text-right">
-              <h2 className="text-3xl md:text-5xl font-black mb-4 leading-tight drop-shadow-md">
-                العنكبوت <span className="text-blue-200 font-extrabold">للمعلومات</span>
-              </h2>
-              <p className="text-blue-50 text-sm md:text-lg mb-8 leading-relaxed opacity-95 max-w-xl font-medium drop-shadow">
-                مدونة تعليمية تقنية شاملة تغطي الألعاب، البرامج، ببجي موبايل، الذكاء الاصطناعي، والشروحات والحلول التقنية الحصرية. عالمك التقني في مكان واحد.
-              </p>
-              <div className="flex flex-wrap gap-4 justify-end md:justify-start">
-                <button
-                  onClick={handlePWAInstallClick}
-                  className="bg-white text-[#035dcd] px-8 py-3.5 rounded-2xl font-bold hover:bg-blue-50 active:scale-95 transition-all shadow-xl hover:shadow-blue-500/20 flex items-center gap-2.5 group cursor-pointer"
-                  title="تحميل وتثبيت تطبيق العنكبوت للمعلومات (PWA)"
-                >
-                  {isInstalled ? (
-                    <>
-                      <span>التطبيق مثبّت على جهازك</span>
-                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                    </>
-                  ) : (
-                    <>
-                      <span>حمل الآن</span>
-                      <Sparkles className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-                    </>
-                  )}
-                </button>
-              </div>
             </div>
-          </div>
-        </div>
-      )}
+            <div className="flex flex-col text-right min-w-0">
+              <div className="text-[13px] sm:text-lg font-extrabold tracking-tight leading-none flex items-center gap-1 font-heading truncate">
+                <span className="text-white">العنكبوت</span>
+                <span className="text-[#38bdf8]">للمعلومات</span>
+              </div>
+              <span className="text-[9px] sm:text-[10px] text-slate-400 font-medium mt-0.5 sm:mt-1 truncate">
+                التكنولوجيا بلا حدود
+              </span>
+            </div>
+          </a>
 
-      {/* Mobile Categories Scroll Bar - ONLY visible on LG and below */}
-      <div className="lg:hidden border-b border-gray-100 dark:border-[#2f366b] bg-gray-50/50 dark:bg-[#1f244a]/50 overflow-hidden">
-        <div className="flex items-center gap-2 overflow-x-auto px-4 py-2.5 no-scrollbar scroll-smooth">
-          {categories.map((cat) => (
-            <button
-              key={cat.slug}
-              onClick={() => onSelectCategory(cat.slug)}
-              className={`shrink-0 px-4 py-1.5 rounded-full text-[11px] font-bold transition-all border cursor-pointer ${
-                activeCategory === cat.slug
-                  ? 'bg-[#035dcd] text-white border-[#035dcd] shadow-sm'
-                  : 'bg-white dark:bg-[#252a54] text-gray-600 dark:text-gray-300 border-gray-200 dark:border-[#2f366b] hover:border-[#035dcd]'
-              }`}
-            >
-              {cat.name}
-            </button>
-          ))}
+          {/* Desktop Navigation Links */}
+          <nav className="hidden lg:flex items-center gap-1 text-xs xl:text-[13px] font-bold">
+            {navItems.map((item, idx) => {
+              const active = isNavItemActive(item.slug, idx);
+              return (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onSelectCategory(item.slug);
+                  }}
+                  className={`px-3.5 py-2 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+                    active
+                      ? 'bg-[#0284c7] text-white shadow-sm'
+                      : 'text-slate-300 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  {item.label}
+                </a>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Left Side (RTL End): Search Input Pill + Dark Mode Button */}
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          {/* Search Input Box inside Header */}
+          <button
+            type="button"
+            onClick={onOpenSearch}
+            className="flex items-center justify-between gap-1.5 sm:gap-3 w-24 sm:w-52 h-8 sm:h-9 px-2.5 sm:px-3.5 rounded-xl bg-[#161f33] hover:bg-[#1c2740] border border-slate-700/70 text-slate-400 text-[11px] sm:text-xs transition-colors cursor-pointer"
+            title="البحث في الموقع"
+            aria-label="ابحث في الموقع"
+          >
+            <span className="flex items-center gap-1.5 truncate">
+              <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <span className="truncate">ابحث...</span>
+            </span>
+          </button>
+
+          {/* Dark Mode Toggle Button */}
+          <button
+            type="button"
+            onClick={onToggleDarkMode}
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#161f33] hover:bg-[#1c2740] border border-slate-700/70 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            title={darkMode ? 'الوضع النهاري' : 'الوضع الليلي'}
+            aria-label="تبديل الوضع"
+          >
+            {darkMode ? (
+              <Sun className="w-4 h-4 text-amber-400" />
+            ) : (
+              <Moon className="w-4 h-4 text-amber-400 fill-amber-400" />
+            )}
+          </button>
         </div>
       </div>
 
       {/* PWA Installation Dialog / Guide Modal */}
       {showPWAInstallModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
           onClick={() => setShowPWAInstallModal(false)}
         >
           <div
-            className="w-full max-w-md rounded-3xl bg-white dark:bg-[#1e2348] p-6 text-right shadow-2xl border border-gray-100 dark:border-[#2f366b] animate-in fade-in zoom-in-95 duration-200"
+            className="w-full max-w-md rounded-3xl bg-white dark:bg-[#1e2348] p-6 text-right shadow-2xl border border-gray-100 dark:border-[#2f366b]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100 dark:border-[#2f366b]">
@@ -374,7 +205,7 @@ export const Header: React.FC<HeaderProps> = ({
                     const accepted = await install();
                     if (accepted) setShowPWAInstallModal(false);
                   }}
-                  className="w-full py-3.5 px-6 rounded-2xl bg-[#035dcd] hover:bg-blue-700 text-white font-black text-sm shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  className="w-full py-3.5 px-6 rounded-2xl bg-[#035dcd] hover:bg-blue-700 text-white font-black text-sm shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer"
                 >
                   <Download className="w-5 h-5" />
                   <span>تثبيت التطبيق الآن</span>
@@ -411,7 +242,7 @@ export const Header: React.FC<HeaderProps> = ({
                 {isIframe && (
                   <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-200 text-xs leading-relaxed">
                     <p className="font-bold mb-2">
-                      لتفعيل نافذة التثبيت التلقائية المباشرة في المتصفح، افتح الموقع في نافذة مستقلة ثم اضغط «حمل الآن»:
+                      لتفعيل نافذة التثبيت التلقائية المباشرة في المتصفح، افتح الموقع في نافذة مستقلة:
                     </p>
                     <a
                       href={typeof window !== 'undefined' ? window.location.href : '/'}
@@ -458,4 +289,3 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
-

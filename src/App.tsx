@@ -30,6 +30,11 @@ import {
   ShoppingBag,
   Megaphone,
   Bookmark,
+  Wrench,
+  Image as ImageIcon,
+  Barcode,
+  Zap,
+  Download,
 } from 'lucide-react';
 
 import { Post, CategoryInfo } from './types';
@@ -63,9 +68,11 @@ import { AdSenseUnit } from './components/AdSenseUnit';
 import { StandalonePageType } from './types';
 import { applySeoMetadata } from './utils/seo';
 import { useFavorites } from './hooks/useFavorites';
+import { usePWAInstall } from './hooks/usePWAInstall';
 
 export default function App() {
   const { isFavorite, toggleFavorite } = useFavorites();
+  const { isInstallable, isInstalled, install } = usePWAInstall();
 
   // Theme state with localStorage sync
   const [darkMode, setDarkMode] = useState<boolean>(() => {
@@ -842,7 +849,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f7f7f7] dark:bg-[#1b1e38] text-[#34495e] dark:text-gray-100 transition-colors duration-300 pb-16 lg:pb-0">
+    <div className="min-h-screen flex flex-col bg-[#f8fafc] dark:bg-[#0f1424] text-[#0f172a] dark:text-gray-100 transition-colors duration-300 pb-16 lg:pb-0">
       
       {/* 1. Main Header */}
       <Header
@@ -854,7 +861,6 @@ export default function App() {
         onOpenStandalonePage={handleOpenStandalonePage}
         activeCategory={activeCategory}
         onSelectCategory={handleSelectCategory}
-
       />
 
       {/* 2. Container Site Wrapper */}
@@ -862,7 +868,7 @@ export default function App() {
         className={
           !isNotFound && !standalonePage && !selectedPost && !selectedDownloadApp && !selectedTool && activeCategory === 'Downloads'
             ? 'flex-1 w-full pb-20 lg:pb-0'
-            : 'flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 pb-20 lg:pb-4'
+            : 'flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-4 pb-20 lg:pb-8'
         }
       >
         
@@ -927,8 +933,249 @@ export default function App() {
             onSelectApp={handleSelectDownloadApp}
             onOpenSeoViewer={() => setIsSeoViewerOpen(true)}
           />
+        ) : activeCategory === 'all' ? (
+          /* HOMEPAGE VIEW — Exact Design-D Layout */
+          <div>
+            {/* 1. Hero Discovery + Search + Category Pills + Featured & Most Viewed */}
+            <FeaturedSlider
+              posts={INITIAL_POSTS}
+              onSelectPost={handleSelectPost}
+              onSelectCategory={handleSelectCategory}
+              onOpenSearch={() => setIsSearchOpen(true)}
+            />
+
+            {/* 2. Section: أحدث المقالات (3-Column Grid) */}
+            <section className="mb-8 sm:mb-12">
+              <div className="flex items-center justify-between mb-4 sm:mb-5">
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-5 sm:h-6 rounded-full bg-[#f97316]" />
+                  <h2 className="text-lg sm:text-2xl font-extrabold text-[#0f172a] dark:text-white font-heading">
+                    أحدث المقالات
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleSelectCategory('Blog')}
+                  className="text-xs font-bold text-[#0284c7] hover:underline cursor-pointer"
+                >
+                  عرض الكل ←
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+                {INITIAL_POSTS.slice(0, 3).map((post, idx) => {
+                  const catColors = [
+                    'text-[#8b5cf6]',
+                    'text-[#f97316]',
+                    'text-[#0284c7]',
+                  ];
+                  const viewsList = ['18.7K', '12.5K', '25.3K'];
+
+                  return (
+                    <article
+                      key={post.id}
+                      onClick={() => handleSelectPost(post)}
+                      className="group bg-white dark:bg-[#181e36] rounded-2xl border border-slate-200/80 dark:border-slate-800 p-3 shadow-xs hover:shadow-md hover:border-[#0284c7] transition-all cursor-pointer flex flex-col"
+                    >
+                      <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 mb-3">
+                        <img
+                          src={post.thumbnail}
+                          alt={post.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      </div>
+
+                      <div className="px-1.5 pb-1 text-right flex-1 flex flex-col justify-between">
+                        <div>
+                          <span
+                            className={`text-xs font-bold mb-1.5 block ${
+                              catColors[idx % catColors.length]
+                            }`}
+                          >
+                            {post.category}
+                          </span>
+                          <h3 className="text-sm sm:text-base font-extrabold text-[#0f172a] dark:text-white group-hover:text-[#0284c7] transition-colors line-clamp-2 leading-snug font-heading">
+                            {post.title}
+                          </h3>
+                        </div>
+
+                        <div className="text-[11px] text-slate-400 mt-3 font-medium">
+                          {post.isoDate || post.date} · {viewsList[idx % viewsList.length]} مشاهدة
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* 3. Section: المزيد من المقالات (2-Column Asymmetric Layout: Right List + Left Free Tools & App CTA) */}
+            <section className="mb-8">
+              <div className="flex items-center justify-between mb-4 sm:mb-5">
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-5 sm:h-6 rounded-full bg-[#f97316]" />
+                  <h2 className="text-lg sm:text-2xl font-extrabold text-[#0f172a] dark:text-white font-heading">
+                    المزيد من المقالات
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleSelectCategory('Blog')}
+                  className="text-xs font-bold text-[#0284c7] hover:underline cursor-pointer"
+                >
+                  عرض الكل ←
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 items-start">
+                {/* Right Column (2/3 in RTL): Horizontal Articles List */}
+                <div className="lg:col-span-2">
+                  <div className="divide-y divide-slate-200/80 dark:divide-slate-800">
+                    {INITIAL_POSTS.slice(3, 3 + visibleCount).map((post, idx) => {
+                      const rowCatColors = [
+                        'text-[#10b981]',
+                        'text-[#ef4444]',
+                        'text-[#0ea5e9]',
+                        'text-[#8b5cf6]',
+                      ];
+                      const rowViews = ['9.4K', '7.1K', '6.2K', '8.5K', '11.2K', '5.9K'];
+
+                      return (
+                        <article
+                          key={post.id}
+                          onClick={() => handleSelectPost(post)}
+                          className="py-3.5 sm:py-5 first:pt-1 flex items-center justify-between gap-3 sm:gap-6 cursor-pointer group"
+                        >
+                          {/* Right side: Text */}
+                          <div className="flex-1 min-w-0 text-right">
+                            <span
+                              className={`text-[11px] sm:text-xs font-bold mb-1 sm:mb-1.5 block ${
+                                rowCatColors[idx % rowCatColors.length]
+                              }`}
+                            >
+                              {post.category}
+                            </span>
+                            <h3 className="text-sm sm:text-lg font-extrabold text-[#0f172a] dark:text-white group-hover:text-[#0284c7] transition-colors line-clamp-2 leading-snug font-heading">
+                              {post.title}
+                            </h3>
+                            <div className="text-[11px] sm:text-xs text-slate-400 mt-1.5 sm:mt-2 font-medium">
+                              {post.isoDate || post.date} · {rowViews[idx % rowViews.length]} مشاهدة
+                            </div>
+                          </div>
+
+                          {/* Left side: Pure Unshaded Thumbnail */}
+                          <div className="w-28 h-20 sm:w-44 sm:h-28 rounded-xl sm:rounded-2xl overflow-hidden shrink-0 bg-slate-100 dark:bg-slate-800 shadow-2xs">
+                            <img
+                              src={post.thumbnail}
+                              alt={post.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+
+                  {3 + visibleCount < INITIAL_POSTS.length && (
+                    <div className="pt-5 sm:pt-6 text-center">
+                      <button
+                        type="button"
+                        onClick={handleLoadMore}
+                        disabled={isLoadingMore}
+                        className="px-6 sm:px-7 py-2.5 rounded-xl bg-white dark:bg-[#181e36] hover:bg-slate-50 border border-slate-200 dark:border-slate-700 text-xs font-bold text-[#0f172a] dark:text-white shadow-2xs hover:border-[#0284c7] transition-all cursor-pointer"
+                      >
+                        {isLoadingMore ? 'جاري التحميل...' : 'عرض المزيد من المقالات'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Left Column (1/3 in RTL): Free Tools Widget + Install App Card */}
+                <div className="lg:col-span-1 space-y-4 sm:space-y-5">
+                  {/* Card 1: أدوات مجانية */}
+                  <div className="bg-white dark:bg-[#181e36] rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 shadow-xs">
+                    <div className="flex items-center gap-2 text-sm font-extrabold text-[#0f172a] dark:text-white mb-3 font-heading">
+                      <Wrench className="w-4 h-4 text-slate-700 dark:text-slate-300" />
+                      <span>أدوات مجانية</span>
+                    </div>
+
+                    <div className="divide-y divide-dashed divide-slate-200 dark:divide-slate-800">
+                      {[
+                        {
+                          label: 'ضغط الصور',
+                          slug: 'image-compressor',
+                          icon: ImageIcon,
+                          iconColor: 'text-slate-700 dark:text-slate-200',
+                        },
+                        {
+                          label: 'مولد الباركود',
+                          slug: 'barcode-generator',
+                          icon: Barcode,
+                          iconColor: 'text-slate-700 dark:text-slate-200',
+                        },
+                        {
+                          label: 'اختبار السرعة',
+                          slug: 'internet-speed-test',
+                          icon: Zap,
+                          iconColor: 'text-amber-500 fill-amber-500',
+                        },
+                        {
+                          label: 'تحميل الفيديو',
+                          slug: 'youtube-downloader',
+                          icon: Download,
+                          iconColor: 'text-slate-700 dark:text-slate-200',
+                        },
+                      ].map((tool) => {
+                        const IconComp = tool.icon;
+                        return (
+                          <button
+                            key={tool.slug}
+                            type="button"
+                            onClick={() => handleSelectTool(tool.slug)}
+                            className="w-full py-3 first:pt-2 last:pb-1 flex items-center gap-3 text-right hover:text-[#0284c7] transition-colors cursor-pointer group"
+                          >
+                            <span className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 group-hover:bg-sky-50 dark:group-hover:bg-slate-700 transition-colors">
+                              <IconComp className={`w-4 h-4 ${tool.iconColor}`} />
+                            </span>
+                            <span className="text-xs sm:text-[13px] font-bold text-slate-700 dark:text-slate-200 group-hover:text-[#0284c7]">
+                              {tool.label}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Card 2: حمّل تطبيق الموقع */}
+                  <div className="bg-gradient-to-br from-[#0284c7] via-[#2563eb] to-[#4f46e5] rounded-2xl p-5 sm:p-6 text-center text-white shadow-md">
+                    <h3 className="text-base font-extrabold font-heading">
+                      حمّل تطبيق الموقع
+                    </h3>
+                    <p className="text-xs text-blue-100 mt-1 mb-4">
+                      تصفّح أسرع وبدون إنترنت
+                    </p>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (isInstallable) {
+                          await install();
+                        } else {
+                          handleSelectCategory('Downloads');
+                        }
+                      }}
+                      className="px-6 py-2 rounded-xl bg-[#f97316] hover:bg-[#ea580c] text-white text-xs font-bold shadow-sm transition-colors cursor-pointer"
+                    >
+                      {isInstalled ? 'التطبيق مثبّت' : 'تثبيت التطبيق'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <AdSenseUnit key="ad-home-bottom" slotType="bottom" postId="home-bottom" />
+          </div>
         ) : (
-          /* Homepage View / Category Feeds */
+          /* Category Feeds View (AI, Business, Blog, Software) */
           <>
             {/* News Ticker Bar (Sp-shreet) */}
             <NewsTicker
@@ -936,37 +1183,11 @@ export default function App() {
               onSelectPost={handleSelectPost}
             />
 
-            {/* Featured Slider / Hero Grid (shown when on homepage) */}
-            {activeCategory === 'all' && (
-              <FeaturedSlider
-                posts={INITIAL_POSTS}
-                onSelectPost={handleSelectPost}
-              />
-            )}
-
-            {/* Interactive Category Banner - Full width directly below NewsTicker on Category Pages */}
+            {/* Interactive Category Banner - Clean dark navy card without image shading */}
             {activeCategory !== 'all' && currentCategoryInfo && (
-              <div className="mb-10">
-                <div className="relative bg-gradient-to-l from-[#035dcd] to-blue-700 rounded-[2rem] overflow-hidden shadow-xl border border-blue-400/20">
-                  {/* Background Image for /Business/ and /AI/ */}
-                  {(currentCategoryInfo.slug === 'Business' || currentCategoryInfo.slug === 'AI') && (
-                    <>
-                      <img
-                        src={
-                          currentCategoryInfo.slug === 'Business'
-                            ? 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgZ8lEC62o2325188_wn1PQbdDnb02xy0sjyd8XoaMozU2O9FrKdVs_Pm-p0qJe9gGabHosZCsuZs0GTw2By_JkDOWgph0gAZxJYT8l-r4gW6QyHia54l3bnO-cfSIv2lgKOxGkGZ6S3Ri0RRZ5nx16IxB6RxOvagNB2mZJo5mWj6pb7-KgOvNnoUdVJQ4/s2149/%D9%86%D9%85%D9%88%20%D9%85%D8%A7%D9%84%D9%8A%20%D9%85%D8%B4%D8%B1%D9%82%20%D9%81%D9%88%D9%82%20%D9%83%D9%88%D9%85%D8%A9%20%D8%B9%D9%85%D9%84%D8%A7%D8%AA.jpg'
-                            : 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgxn60hpX1pcksR4nMAaBKINsveCgSmiVLuoMeU7yokzV1y_B43svp51NTpscL77pP0u3WHmv-hTKUbQU2XDcGqx6ud8exG2cqpRiZZGTiJKyb-WBKgHZp5hR2JosZjfOTAqCqkO8HXxv7AHP2dJmfA085T7IP__HJdqw1b2j7Fs26ICP5TltAAS8K1vxQ/s1600/%D8%AA%D8%B5%D9%85%D9%8A%D9%85%20%D8%A8%D8%AF%D9%88%D9%86%20%D8%B9%D9%86%D9%88%D8%A7%D9%86%20%285%29.png'
-                        }
-                        alt={currentCategoryInfo.name}
-                        className="absolute inset-0 w-full h-full object-cover"
-                        referrerPolicy="no-referrer"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-l from-slate-950/85 via-[#035dcd]/75 to-slate-950/70" />
-                    </>
-                  )}
-
-                  <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 p-7 sm:p-12">
-                    {/* Text, Description & Spaced Navigation Area */}
+              <div className="mb-6 sm:mb-10">
+                <div className="relative bg-[#0b1120] rounded-2xl sm:rounded-3xl overflow-hidden shadow-lg border border-slate-800">
+                  <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 sm:gap-8 p-5 sm:p-10">
                     <div className="flex-1 text-right w-full">
                       {/* Breadcrumb */}
                       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-blue-100/90 mb-4 font-bold">
@@ -1170,81 +1391,8 @@ export default function App() {
               {/* Main Content Column (Spans 2 columns on desktop) */}
               <div className="lg:col-span-2 w-full space-y-8 overflow-visible">
                 
-                {/* CASE A: HOMEPAGE (activeCategory === 'all') */}
-                {activeCategory === 'all' ? (
-                  <div className="space-y-8">
-                    <AdSenseUnit key="ad-home-top" slotType="top" postId="home-top" />
-
-                    {/* Category Overview Grid (4 Main Sections) */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {INITIAL_CATEGORIES.map((cat) => {
-                        const catPostsCount = getSectionPosts(cat.slug).length;
-                        return (
-                          <a
-                            key={cat.slug}
-                            href={`/${cat.slug}/`}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleSelectCategory(cat.slug);
-                            }}
-                            className="group relative h-36 rounded-2xl overflow-hidden cursor-pointer border border-gray-100 dark:border-[#2f366b] shadow-sm hover:shadow-md transition-all block"
-                          >
-                            <img
-                              src={cat.image}
-                              alt={cat.name}
-                              className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-transparent flex flex-col justify-end p-4 text-right">
-                              <h3 className="text-white font-black text-base mb-1 group-hover:text-blue-400 transition-colors">
-                                {cat.name}
-                              </h3>
-                              <p className="text-gray-200 text-xs leading-relaxed line-clamp-2 opacity-95 group-hover:opacity-100 transition-opacity">
-                                {cat.description}
-                              </p>
-                            </div>
-                            <div className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full bg-blue-600/85 backdrop-blur-sm text-white text-[10px] font-bold">
-                              {catPostsCount} مقال
-                            </div>
-                          </a>
-                        );
-                      })}
-                    </div>
-
-                    {/* The 4 Dedicated Sections in order */}
-                    {INITIAL_CATEGORIES.map((cat, idx) => {
-                      const catPosts = getSectionPosts(cat.slug);
-                      return (
-                        <React.Fragment key={cat.slug}>
-                          <HomeCategorySection
-                            category={cat}
-                            posts={catPosts}
-                            onSelectCategory={handleSelectCategory}
-                            onSelectPost={handleSelectPost}
-                            onOpenImage={(url, title) => setLightboxImage({ url, title })}
-                          />
-                          {idx === 1 && (
-                            <AdSenseUnit
-                              key="ad-home-after-section-2"
-                              slotType="middle"
-                              postId="home-after-section-2"
-                            />
-                          )}
-                          {idx === 2 && (
-                            <AdSenseUnit
-                              key="ad-home-after-section-3"
-                              slotType="top"
-                              postId="home-after-section-3"
-                            />
-                          )}
-                        </React.Fragment>
-                      );
-                    })}
-
-                    <AdSenseUnit key="ad-home-bottom" slotType="bottom" postId="home-bottom" />
-                  </div>
-                ) : (
-                  /* CASE B: DEDICATED SECTION VIEW (AI, Business, Blog, Software) */
-                  <div className="space-y-6">
+                {/* DEDICATED SECTION VIEW (AI, Business, Blog, Software) */}
+                <div className="space-y-6">
 
                       {/* View Layout Switcher (SeoPlus BlogStylePosts) - Hidden on mobile as requested */}
                       <div className="hidden sm:flex p-5 rounded-2xl bg-white dark:bg-[#252a54] border border-gray-100 dark:border-[#2f366b] shadow-sm flex-wrap items-center justify-between gap-3">
@@ -1587,7 +1735,6 @@ export default function App() {
                       />
                     )}
                   </div>
-                )}
 
               </div>
 
